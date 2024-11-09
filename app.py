@@ -8,38 +8,50 @@ import os
 # Set page configuration
 st.set_page_config(page_title="Purchase Intention Predictor", page_icon="🛒", layout="wide")
 
-# Custom CSS for a sleeker look
+# Custom CSS for yellow theme with black text
 st.markdown("""
     <style>
     .main, .stApp {
-        background-color: #001f3f;
-        color: #e0e0e0;
+        background-color: #fff9e6;
+        color: #000000;
     }
     .sidebar .sidebar-content {
-        background-color: #002c59;
+        background-color: #fff3cc;
     }
     .stSlider > div > div {
-        color: #e0e0e0;
+        color: #000000;
     }
     .stSelectbox > div {
         font-size: 16px;
-        color: #e0e0e0;
+        color: #000000;
     }
     .stPlotlyChart {
-        border: 2px solid #00a6a6;
+        border: 2px solid #ffd700;
         padding: 5px;
         border-radius: 10px;
-        background-color: #002c59;
+        background-color: #fff3cc;
     }
     h1, h2, h3, h4, h5 {
-        color: #00a6a6;
+        color: #b38600;
     }
     .stAlert {
-        background-color: #002c59;
-        color: #e0e0e0;
+        background-color: #fff3cc;
+        color: #000000;
     }
     .stSpinner > div > div {
-        border-top-color: #00a6a6 !important;
+        border-top-color: #ffd700 !important;
+    }
+    .stButton>button {
+        background-color: #ffd700;
+        color: #000000;
+        font-weight: bold;
+        border: 2px solid #b38600;
+        padding: 10px 20px;
+        border-radius: 5px;
+    }
+    .stButton>button:hover {
+        background-color: #ffed4a;
+        border-color: #ffd700;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -109,14 +121,17 @@ with col1:
         format_func=lambda x: {1: "Male", 2: "Female", 3: "Prefer not to say"}[x]
     )
 
+    # Add prediction button
+    predict_button = st.button("🔮 Make Prediction")
+
 with col2:
     st.header("🔮 Prediction Results")
 
-    # Prepare features (as a 2D array)
-    features = np.array([[ppq1, pv3, pv2, age, gender]])
+    # Only show prediction when button is clicked
+    if predict_button and model is not None:
+        # Prepare features (as a 2D array)
+        features = np.array([[ppq1, pv3, pv2, age, gender]])
 
-    # Prediction and chart update
-    if model is not None:
         with st.spinner("Updating prediction..."):
             try:
                 prediction = model.predict(features)
@@ -133,49 +148,55 @@ with col2:
 
                 st.success(prediction_label)
 
-                # Simplified bar chart using Plotly with teal gradient
+                # Create pie chart using Plotly
                 labels = ['No intention', 'Strong intention', 'Neutral intention']
                 values = prediction_probabilities.round(4) * 100  # Display in percentage
 
-                colors = n_colors('rgb(0, 166, 166)', 'rgb(0, 76, 76)', 3, colortype='rgb')
-                
                 fig = go.Figure(data=[
-                    go.Bar(
-                        x=values, 
-                        y=labels,
-                        orientation='h',
+                    go.Pie(
+                        labels=labels,
+                        values=values,
+                        hole=0.4,  # Creates a donut chart
                         marker=dict(
-                            color=values,
-                            colorscale=colors,
-                            colorbar=dict(
-                                title="Probability (%)",
-                                titleside="top",
-                                tickmode="array",
-                                tickvals=[0, 50, 100],
-                                ticktext=["0%", "50%", "100%"],
-                                ticks="outside"
-                            )
-                        )
+                            colors=['#fff3cc', '#ffd700', '#b38600'],
+                            line=dict(color='#000000', width=1.5)
+                        ),
+                        textfont=dict(color='#000000', size=14),
+                        hovertemplate="<b>%{label}</b><br>" +
+                                    "Probability: %{value:.1f}%<br>" +
+                                    "<extra></extra>",
+                        texttemplate="%{label}<br>%{value:.1f}%"
                     )
                 ])
 
                 fig.update_layout(
-                    title_text="🔎 Probability of Purchase Intention",
-                    xaxis_title="Probability (%)",
-                    yaxis_title="Purchase Intention",
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='#e0e0e0', size=14),
+                    title=dict(
+                        text="🔎 Probability Distribution of Purchase Intention",
+                        font=dict(color='#000000', size=16),
+                        y=0.95
+                    ),
+                    plot_bgcolor='rgba(255,249,230,0)',
+                    paper_bgcolor='rgba(255,249,230,0)',
                     height=400,
-                    margin=dict(l=0, r=0, t=40, b=0)
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    showlegend=False,
+                    annotations=[
+                        dict(
+                            text="Purchase<br>Intention",
+                            x=0.5,
+                            y=0.5,
+                            font=dict(size=14, color='#000000'),
+                            showarrow=False
+                        )
+                    ]
                 )
-
-                fig.update_xaxes(range=[0, 100], tickvals=[0, 25, 50, 75, 100], ticktext=['0%', '25%', '50%', '75%', '100%'])
 
                 # Display the chart
                 st.plotly_chart(fig, use_container_width=True)
 
             except Exception as e:
                 st.error(f"❗ Error during prediction: {e}")
+    elif not predict_button:
+        st.info("Click the 'Make Prediction' button to see results!")
     else:
         st.warning("⚠️ Model is not loaded correctly.")
