@@ -5,7 +5,6 @@ This Streamlit app predicts a customer's purchase intention based on various fac
 ## Features
 
 - Interactive sliders and dropdowns for input
-- Real-time prediction updates
 - Chart for visualizing prediction probabilities
 
 ## Installation
